@@ -1,0 +1,13 @@
+from fastapi import WebSocket
+
+clients = []
+
+async def websocket_endpoint(ws: WebSocket):
+    await ws.accept()
+    clients.append(ws)
+
+    try:
+        while True:
+            await ws.receive_text()
+    except:
+        clients.remove(ws)

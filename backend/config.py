@@ -1,0 +1,2 @@
+CAMERA_INDEX = 0
+NO_MOVEMENT_TIME = 10  # seconds
