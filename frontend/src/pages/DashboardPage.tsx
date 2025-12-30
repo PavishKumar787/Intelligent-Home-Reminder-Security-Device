@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Activity, AlertTriangle, Shield, Bell, Users, Eye } from 'lucide-react';
+import { Activity, AlertTriangle, Shield, Bell, Users, Eye, Package } from 'lucide-react';
 import StatCard from '@/components/shared/StatCard';
 import AlertCard from '@/components/shared/AlertCard';
 import CameraBox from '@/components/shared/CameraBox';
@@ -10,6 +10,7 @@ const DashboardPage: React.FC = () => {
   const [detectedPerson, setDetectedPerson] = useState<{
     name: string;
     isKnown: boolean;
+    reminders: string[];
   } | null>(null);
 
   useEffect(() => {
@@ -35,6 +36,7 @@ const DashboardPage: React.FC = () => {
           setDetectedPerson({
             name: data.name,
             isKnown: data.isKnown,
+            reminders: data.reminders || [],
           });
         } else {
           setDetectedPerson(null);
@@ -116,6 +118,8 @@ const DashboardPage: React.FC = () => {
                     className={`w-10 h-10 rounded-full flex items-center justify-center ${
                       detectedPerson.isKnown
                         ? 'bg-success/20'
+                        : detectedPerson.name === 'Motion Detected'
+                        ? 'bg-blue-500/20'
                         : 'bg-destructive/20'
                     }`}
                   >
@@ -123,22 +127,28 @@ const DashboardPage: React.FC = () => {
                       className={`h-5 w-5 ${
                         detectedPerson.isKnown
                           ? 'text-success'
+                          : detectedPerson.name === 'Motion Detected'
+                          ? 'text-blue-500'
                           : 'text-destructive'
                       }`}
                     />
                   </div>
                   <div>
-                    <p className="font-medium">{detectedPerson.name}</p>
+                    <p className="font-medium capitalize">{detectedPerson.name}</p>
                     <span
                       className={`text-xs px-2 py-0.5 rounded-full ${
                         detectedPerson.isKnown
                           ? 'bg-success/20 text-success'
+                          : detectedPerson.name === 'Motion Detected'
+                          ? 'bg-blue-500/20 text-blue-500'
                           : 'bg-destructive/20 text-destructive'
                       }`}
                     >
                       {detectedPerson.isKnown
                         ? 'Known User'
-                        : 'Stranger'}
+                        : detectedPerson.name === 'Motion Detected'
+                        ? 'Motion Activity'
+                        : 'Unknown Person'}
                     </span>
                   </div>
                 </div>
@@ -148,6 +158,29 @@ const DashboardPage: React.FC = () => {
                 </p>
               )}
             </div>
+
+            {/* Reminders Section - Only show for known users with reminders */}
+            {detectedPerson?.isKnown && detectedPerson.reminders.length > 0 && (
+              <div className="p-4 rounded-lg bg-warning/10 border border-warning/30">
+                <div className="flex items-center gap-2 mb-3">
+                  <Bell className="h-4 w-4 text-warning" />
+                  <p className="text-sm font-semibold text-warning">
+                    Don't forget to take:
+                  </p>
+                </div>
+                <ul className="space-y-2">
+                  {detectedPerson.reminders.map((item, index) => (
+                    <li
+                      key={index}
+                      className="flex items-center gap-2 text-sm p-2 rounded bg-background/50"
+                    >
+                      <Package className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
       </div>

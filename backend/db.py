@@ -1,7 +1,8 @@
 import json
 import os
 
-DB_FILE = "users.json"
+# Use absolute path based on this file's location
+DB_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "users.json")
 
 def load_db():
     if not os.path.exists(DB_FILE):
@@ -14,43 +15,53 @@ def save_db(data):
         json.dump(data, f, indent=4)
 
 def add_user(user):
-    """Add or update user with embedding (supports multi-sample enrollment)"""
+    """Add or update user with face encoding - supports multiple encodings per person"""
     data = load_db()
     user_name = user["name"].lower()
+    new_encoding = user["face_encoding"]
     
     # Check if user already exists
     for u in data:
         if u["name"] == user_name:
-            # Initialize face_encodings if not exists (backward compatibility)
+            # Support multiple encodings per user
             if "face_encodings" not in u:
+                # Migrate from single encoding to list
                 if "face_encoding" in u:
                     u["face_encodings"] = [u["face_encoding"]]
-                    del u["face_encoding"]
                 else:
                     u["face_encodings"] = []
-            # Add new embedding
-            u["face_encodings"].append(user["face_encoding"])
+            
+            # Add new encoding to the list (max 10 encodings per person)
+            if len(u["face_encodings"]) < 10:
+                u["face_encodings"].append(new_encoding)
+                print(f"Added encoding #{len(u['face_encodings'])} for user: {user_name}")
+            else:
+                # Replace oldest encoding if at max
+                u["face_encodings"].pop(0)
+                u["face_encodings"].append(new_encoding)
+                print(f"Replaced oldest encoding for user: {user_name} (max 10 reached)")
+            
+            u["reminders"] = user.get("reminders", u.get("reminders", []))
             save_db(data)
             return
     
-    # New user
+    # New user - store as list of encodings
     data.append({
         "name": user_name,
-        "face_encodings": [user["face_encoding"]],
+        "face_encodings": [new_encoding],
         "reminders": user.get("reminders", [])
     })
     save_db(data)
+    print(f"Added new user: {user_name} with 1 encoding")
 
 def add_user_embedding(name, embedding):
-    """Add embedding to existing user (for multi-sample enrollment)"""
+    """Update user's face encoding"""
     users = load_db()
     user_name = name.lower()
     
     for u in users:
         if u["name"] == user_name:
-            if "face_encodings" not in u:
-                u["face_encodings"] = []
-            u["face_encodings"].append(embedding.tolist())
+            u["face_encoding"] = embedding.tolist() if hasattr(embedding, 'tolist') else embedding
             save_db(users)
             return True
     

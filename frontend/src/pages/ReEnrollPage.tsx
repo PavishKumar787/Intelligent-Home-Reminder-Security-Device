@@ -3,11 +3,15 @@ import { RefreshCw, Trash2 } from 'lucide-react';
 import UploadForm from '@/components/shared/UploadForm';
 import { faceApi } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
-import axios from 'axios';
+
+type User = {
+  name: string;
+  reminders: string[];
+};
 
 const ReEnrollPage: React.FC = () => {
   const { toast } = useToast();
-  const [existingUsers, setExistingUsers] = useState<string[]>([]);
+  const [existingUsers, setExistingUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
 
   const fetchUsers = async () => {
@@ -87,7 +91,7 @@ const ReEnrollPage: React.FC = () => {
         nameLabel="Select User"
         buttonText="Update Face"
         onSubmit={handleReEnroll}
-        existingNames={existingUsers}
+        existingNames={existingUsers.map((u) => u.name)}
         isReEnroll={true}
       />
 
@@ -109,16 +113,16 @@ const ReEnrollPage: React.FC = () => {
           <p className="text-muted-foreground text-sm">No users enrolled yet.</p>
         ) : (
           <div className="space-y-2">
-            {existingUsers.map((name) => (
+            {existingUsers.map((user) => (
               <div
-                key={name}
+                key={user.name}
                 className="flex items-center justify-between p-3 border rounded bg-background/50 hover:bg-background transition"
               >
-                <span className="font-medium">{name}</span>
+                <span className="font-medium">{user.name}</span>
                 <button
-                  onClick={() => handleDeleteUser(name)}
+                  onClick={() => handleDeleteUser(user.name)}
                   className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 p-2 rounded transition"
-                  title={`Delete ${name}`}
+                  title={`Delete ${user.name}`}
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>

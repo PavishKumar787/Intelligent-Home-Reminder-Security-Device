@@ -31,8 +31,29 @@ interface AppLayoutProps {
 
 const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const [systemActive, setSystemActive] = React.useState(false);
   const { logout, user } = useAuth();
   const location = useLocation();
+
+  // Check system health
+  React.useEffect(() => {
+    const checkHealth = async () => {
+      try {
+        const res = await fetch('http://127.0.0.1:8000/health');
+        if (res.ok) {
+          setSystemActive(true);
+        } else {
+          setSystemActive(false);
+        }
+      } catch {
+        setSystemActive(false);
+      }
+    };
+
+    checkHealth();
+    const interval = setInterval(checkHealth, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -139,8 +160,10 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           </div>
           <div className="flex items-center gap-2">
             <span className="flex items-center gap-2 text-sm">
-              <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-              <span className="text-muted-foreground hidden sm:inline">System Active</span>
+              <span className={`w-2 h-2 rounded-full ${systemActive ? 'bg-success animate-pulse' : 'bg-destructive'}`} />
+              <span className="text-muted-foreground hidden sm:inline">
+                {systemActive ? 'System Active' : 'System Offline'}
+              </span>
             </span>
           </div>
         </header>

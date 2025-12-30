@@ -4,10 +4,14 @@ import numpy as np
 from camera import get_frame
 from detection.motion_detection import detect_motion
 from detection.fall_detection import detect_fall, no_movement
-from detection.state import current_detection
-from services.alert_service import create_alert
+from detection.state import current_detection, detection_tracking, UNKNOWN_THRESHOLD
+from services.alert_store import alerts  # Import shared store for debug
+from services.alert_service import create_alert, clear_stranger_alerts
 from recognition.face_recognition import identify_person
 from db import get_user_by_name
+
+# Debug: Print store ID to verify same instance
+print(f"🔗 processor.py loaded - ALERT STORE ID: {id(alerts)}")
 
 
 # ---------------- ALERT COOLDOWNS ---------------- #
@@ -77,6 +81,7 @@ def start_processing():
                 current_detection["type"] = None
                 current_detection["name"] = None
                 current_detection["isKnown"] = False
+                # Don't reset unknown_frames immediately - allow for brief detection gaps
                 time.sleep(0.5)
                 continue
 
@@ -87,15 +92,34 @@ def start_processing():
                 current_detection["name"] = "Unknown"
                 current_detection["isKnown"] = False
                 
-                if can_trigger("SECURITY"):
+                # Increment unknown frames counter on EVERY loop iteration (not just recognition)
+                detection_tracking["unknown_frames"] += 1
+                detection_tracking["known_user_present"] = False
+                
+                # Debug: Log every 5 increments
+                if detection_tracking["unknown_frames"] % 5 == 0:
+                    print(f"🔍 Processor: Unknown frames = {detection_tracking['unknown_frames']}/{UNKNOWN_THRESHOLD}")
+                
+                # Only create alert after threshold and not already alerted
+                if (detection_tracking["unknown_frames"] >= UNKNOWN_THRESHOLD and 
+                    not detection_tracking["last_stranger_alert"]):
+                    print(f"🚨 Processor: Stranger threshold reached ({detection_tracking['unknown_frames']} frames)")
                     create_alert(
-                        "SECURITY",
-                        "⚠️ Stranger detected near entrance"
+                        "security",
+                        "Stranger detected near entrance"
                     )
-                time.sleep(1)
+                    detection_tracking["last_stranger_alert"] = True
+                time.sleep(0.1)  # Faster loop for quicker detection
                 continue
 
             # ---------------- KNOWN USER ---------------- #
+            # Transition to known user - DO NOT clear alerts, let them persist
+            if not detection_tracking["known_user_present"]:
+                print(f"✅ Processor: Known user detected: {person}")
+            detection_tracking["unknown_frames"] = 0
+            detection_tracking["known_user_present"] = True
+            detection_tracking["last_stranger_alert"] = False
+            
             # 🔥 UPDATE DETECTION STATE
             current_detection["type"] = "face"
             current_detection["name"] = person
@@ -105,19 +129,19 @@ def start_processing():
 
             if detect_motion(frame) and can_trigger("MOTION"):
                 create_alert(
-                    "MOTION",
+                    "motion",
                     f"Movement detected by {person}"
                 )
 
             if detect_fall(frame) and can_trigger("EMERGENCY"):
                 create_alert(
-                    "EMERGENCY",
+                    "emergency",
                     f"🚨 {person} may have fallen"
                 )
 
             if no_movement() and can_trigger("WARNING"):
                 create_alert(
-                    "WARNING",
+                    "security",
                     f"⚠️ No movement detected for {person}"
                 )
 
@@ -125,8 +149,8 @@ def start_processing():
             if user and user.get("reminders") and can_trigger("REMINDER"):
                 items = ", ".join(user["reminders"])
                 create_alert(
-                    "REMINDER",
-                    f"{person}, don’t forget your {items}"
+                    "reminder",
+                    f"{person.capitalize()}, don't forget your {items}"
                 )
 
             time.sleep(0.5)

@@ -1,10 +1,12 @@
 import json
 import numpy as np
+import os
 
-DB_PATH = "users.json"
+# Use absolute path based on backend folder
+DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "users.json")
 
 def load_known_faces():
-    """Load enrolled faces from database"""
+    """Load enrolled faces from database - supports multiple encodings per person"""
     try:
         with open(DB_PATH, "r") as f:
             users = json.load(f)
@@ -16,9 +18,20 @@ def load_known_faces():
     encodings = []
 
     for u in users:
-        if u.get("name") and u.get("face_encoding"):
-            names.append(u["name"])
+        name = u.get("name")
+        if not name:
+            continue
+            
+        # Support both old format (face_encoding) and new format (face_encodings)
+        if "face_encodings" in u and u["face_encodings"]:
+            # New format: multiple encodings per person
+            for enc in u["face_encodings"]:
+                names.append(name)
+                encodings.append(np.array(enc, dtype=np.float32))
+        elif "face_encoding" in u and u["face_encoding"]:
+            # Old format: single encoding
+            names.append(name)
             encodings.append(np.array(u["face_encoding"], dtype=np.float32))
 
-    print(f"Loaded {len(names)} known faces from database")
+    print(f"Loaded {len(encodings)} face encodings for {len(set(names))} users")
     return names, encodings
