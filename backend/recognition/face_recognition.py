@@ -60,15 +60,24 @@ def identify_person(frame):
     # 🔁 Compare with database
     users = get_all_users()
     for user in users:
-        saved_embedding = np.array(user["face_encoding"], dtype=np.float32)
-
-        # Ensure same length
-        if saved_embedding.shape != current_embedding.shape:
+        if not user:
             continue
 
-        distance = np.linalg.norm(saved_embedding - current_embedding)
+        embeddings = []
+        if user.get("face_encodings"):
+            embeddings.extend(user["face_encodings"])
+        elif user.get("face_encoding"):
+            embeddings.append(user["face_encoding"])
 
-        if distance < THRESHOLD:
-            return user["name"]
+        for saved in embeddings:
+            saved_embedding = np.array(saved, dtype=np.float32)
+
+            if saved_embedding.shape != current_embedding.shape:
+                continue
+
+            distance = np.linalg.norm(saved_embedding - current_embedding)
+
+            if distance < THRESHOLD:
+                return user["name"]
 
     return "STRANGER"

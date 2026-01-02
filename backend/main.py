@@ -43,10 +43,6 @@ def startup():
     clear_alerts()
     print("✓ Alerts cleared on startup")
     
-    # 🧪 TEST: Add a test alert on startup to verify display works
-    create_alert("security", "🧪 TEST: Stranger detection alert - system working")
-    print(f"🧪 Test alert created - Alert count: {len(alerts)}")
-    
     thread = threading.Thread(target=start_processing, daemon=True)
     thread.start()
 
