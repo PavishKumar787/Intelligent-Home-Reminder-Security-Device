@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import axios from 'axios';
+import api from '@/lib/api';
 
 interface UserWithReminders {
   name: string;
@@ -45,7 +45,7 @@ const RemindersPage: React.FC = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://127.0.0.1:8000/users');
+      const response = await api.get('/users');
       setUsers(response.data);
       if (response.data.length > 0 && !selectedUser) {
         setSelectedUser(response.data[0].name);
@@ -70,7 +70,7 @@ const RemindersPage: React.FC = () => {
   const saveReminders = async (userName: string, reminders: string[]) => {
     try {
       setSaving(true);
-      await axios.post('http://127.0.0.1:8000/update-reminders', {
+      await api.post('/update-reminders', {
         name: userName,
         reminders: reminders,
       });

@@ -15,6 +15,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import { BASE_URL } from '@/config';
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -39,7 +40,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   React.useEffect(() => {
     const checkHealth = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8000/health');
+        const res = await fetch(`${BASE_URL}/health`);
         if (res.ok) {
           setSystemActive(true);
         } else {

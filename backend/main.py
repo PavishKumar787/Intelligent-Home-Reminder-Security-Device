@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware  
 from api.dashboard import router as dashboard_router
@@ -11,6 +13,21 @@ from processor import start_processing
 from services.alert_store import alerts  # Import shared store directly
 from services.alert_service import clear_alerts, create_alert
 
+
+def get_allowed_origins():
+    default_origins = [
+        "http://localhost:8080",
+        "http://127.0.0.1:8080",
+        "http://localhost:5173",  # Vite default
+        "http://127.0.0.1:5173",
+    ]
+
+    extra_origins = os.getenv("FRONTEND_ORIGINS", "")
+    parsed_extras = [origin.strip() for origin in extra_origins.split(",") if origin.strip()]
+    default_origins.extend(parsed_extras)
+
+    return list(dict.fromkeys(default_origins))
+
 # Debug: Print store ID to verify same instance
 print(f"🔗 main.py loaded - ALERT STORE ID: {id(alerts)}")
 
@@ -18,12 +35,7 @@ app = FastAPI(title="Smart Reminder & Surveillance System")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:8080",
-        "http://127.0.0.1:8080",
-        "http://localhost:5173",  # Vite default
-        "http://127.0.0.1:5173"
-    ],
+    allow_origins=get_allowed_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

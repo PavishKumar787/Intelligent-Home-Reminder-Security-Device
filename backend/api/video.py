@@ -60,7 +60,7 @@ def generate_frames():
                 if frame_count % 30 == 0:
                     print(f"🔥 Recognition loop running - Frame {frame_count}, Detected: {name}")
                 
-                if name and name != "Unknown":
+                if name and name != "STRANGER":
                     # Known face detected
                     if not detection_tracking["known_user_present"]:
                         # Transition from unknown/none to known - DO NOT clear alerts, let them persist
@@ -90,7 +90,7 @@ def generate_frames():
                         print(f"⚠️ Reminder alert error: {reminder_error}")
                     if frame_count % 30 == 0:
                         print(f"✓ Recognized: {name} (confidence: {confidence:.2f})" if confidence else f"✓ Recognized: {name}")
-                elif name == "Unknown":
+                elif name == "STRANGER":
                     # Unknown face detected - increment counter, reset no-face counter
                     detection_tracking["unknown_frames"] += 1
                     detection_tracking["no_face_frames"] = 0

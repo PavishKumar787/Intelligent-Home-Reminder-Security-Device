@@ -4,6 +4,7 @@ import StatCard from '@/components/shared/StatCard';
 import AlertCard from '@/components/shared/AlertCard';
 import CameraBox from '@/components/shared/CameraBox';
 import { alertsApi, type Alert } from '@/lib/api';
+import { BASE_URL } from '@/config';
 
 const DashboardPage: React.FC = () => {
   const [alerts, setAlerts] = useState<Alert[]>([]);
@@ -28,7 +29,7 @@ const DashboardPage: React.FC = () => {
   useEffect(() => {
     const fetchDetection = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:8000/current-detection");
+        const res = await fetch(`${BASE_URL}/current-detection`);
         const data = await res.json();
         
         // Only show if there's an actual detection

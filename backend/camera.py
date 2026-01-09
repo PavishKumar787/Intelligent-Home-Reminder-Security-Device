@@ -21,4 +21,7 @@ def get_frame():
     elif frame.shape[2] == 4:
         frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
 
+    # 🔒 Force strict C-contiguous copy for dlib compatibility
+    frame = np.array(frame, dtype=np.uint8, order='C', copy=True)
+
     return frame

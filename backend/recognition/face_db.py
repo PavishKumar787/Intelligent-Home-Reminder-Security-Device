@@ -27,11 +27,11 @@ def load_known_faces():
             # New format: multiple encodings per person
             for enc in u["face_encodings"]:
                 names.append(name)
-                encodings.append(np.array(enc, dtype=np.float32))
+                encodings.append(np.array(enc, dtype=np.float64))
         elif "face_encoding" in u and u["face_encoding"]:
             # Old format: single encoding
             names.append(name)
-            encodings.append(np.array(u["face_encoding"], dtype=np.float32))
+            encodings.append(np.array(u["face_encoding"], dtype=np.float64))
 
     print(f"Loaded {len(encodings)} face encodings for {len(set(names))} users")
     return names, encodings

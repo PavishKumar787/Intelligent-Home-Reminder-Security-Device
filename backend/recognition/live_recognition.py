@@ -55,8 +55,8 @@ def recognize_from_frame(frame):
         # Convert BGR to RGB (face_recognition requires RGB)
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         
-        # Make array contiguous
-        rgb = np.ascontiguousarray(rgb)
+        # Force a fresh copy to guarantee strict C-contiguous memory layout for dlib
+        rgb = np.array(rgb, dtype=np.uint8, order='C', copy=True)
         
         # Use face_recognition to detect face locations
         face_locations = face_recognition.face_locations(rgb)
@@ -87,7 +87,8 @@ def recognize_from_frame(frame):
             confidence = 1 - min_dist  # Convert distance to confidence (0-1)
             return known_names[idx], confidence
 
-        return "Unknown", 1 - min_dist
+        # Return "STRANGER" to match identify_person() in face_recognition.py
+        return "STRANGER", 1 - min_dist
         
     except Exception as e:
         # Silently skip any errors during recognition

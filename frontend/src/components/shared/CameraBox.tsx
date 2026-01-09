@@ -2,6 +2,7 @@ import React from 'react';
 import { Video, VideoOff, Maximize2, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { BASE_URL } from '@/config';
 
 interface CameraBoxProps {
   isLive?: boolean;
@@ -50,7 +51,7 @@ const CameraBox: React.FC<CameraBoxProps> = ({
       <div className="relative aspect-video bg-black overflow-hidden">
         {isLive ? (
           <img
-            src="http://127.0.0.1:8000/video-feed"
+            src={`${BASE_URL}/video-feed`}
             alt="Live Camera Feed"
             className="w-full h-full object-cover"
           />

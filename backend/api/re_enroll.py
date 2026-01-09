@@ -1,8 +1,8 @@
 from fastapi import APIRouter, UploadFile, File, Form
+import numpy as np
+import cv2
 import face_recognition
 from db import load_db, save_db, get_user_by_name
-import tempfile
-import os
 
 router = APIRouter()
 
@@ -33,26 +33,26 @@ async def re_enroll_face(
         image_bytes = await file.read()
         print(f"Image bytes received: {len(image_bytes)}", flush=True)
         
-        # Save to temporary file and use face_recognition's native loader
-        temp_path = None
-        try:
-            suffix = os.path.splitext(file.filename)[1] if file.filename else '.jpg'
-            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
-                temp_file.write(image_bytes)
-                temp_path = temp_file.name
-            
-            print(f"Temp file created: {temp_path}", flush=True)
-            
-            # Use face_recognition's native image loader
-            rgb = face_recognition.load_image_file(temp_path)
-            print(f"Image loaded via face_recognition: shape={rgb.shape}, dtype={rgb.dtype}", flush=True)
-            
-        except Exception as e:
-            print(f"ERROR loading image: {e}", flush=True)
+        # Decode bytes with OpenCV to ensure contiguous uint8 RGB data
+        image_array = np.frombuffer(image_bytes, dtype=np.uint8)
+        bgr_image = cv2.imdecode(image_array, cv2.IMREAD_UNCHANGED)
+
+        if bgr_image is None:
+            print("ERROR decoding image: OpenCV returned None", flush=True)
             return {"error": "Invalid image format"}
-        finally:
-            if temp_path and os.path.exists(temp_path):
-                os.unlink(temp_path)
+
+        if bgr_image.ndim == 2:
+            # Grayscale image – expand to 3 channels
+            bgr_image = cv2.cvtColor(bgr_image, cv2.COLOR_GRAY2BGR)
+        elif bgr_image.shape[2] == 4:
+            # Drop alpha channel if present
+            bgr_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGRA2BGR)
+
+        rgb = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2RGB)
+        # Force a fresh copy to guarantee strict C-contiguous memory layout for dlib
+        rgb = np.array(rgb, dtype=np.uint8, order='C', copy=True)
+
+        print(f"Image decoded via OpenCV: shape={rgb.shape}, dtype={rgb.dtype}, contiguous={rgb.flags['C_CONTIGUOUS']}", flush=True)
 
         # Use face_recognition to detect faces and get encodings
         try:
