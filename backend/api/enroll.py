@@ -29,18 +29,28 @@ async def enroll_face(
             print("ERROR decoding image: OpenCV returned None", flush=True)
             return {"error": "Invalid image format"}
 
+        print(
+            "Decoded BGR: "
+            f"shape={bgr_image.shape}, dtype={bgr_image.dtype}, "
+            f"ndim={bgr_image.ndim}, contiguous={bgr_image.flags['C_CONTIGUOUS']}",
+            flush=True,
+        )
+
         if bgr_image.ndim == 2:
-            # Grayscale image – expand to 3 channels
             bgr_image = cv2.cvtColor(bgr_image, cv2.COLOR_GRAY2BGR)
+            print("Converted grayscale to BGR", flush=True)
         elif bgr_image.shape[2] == 4:
-            # Drop alpha channel if present
             bgr_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGRA2BGR)
+            print("Dropped alpha channel", flush=True)
 
         rgb = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2RGB)
-        # Force a fresh copy to guarantee strict C-contiguous memory layout for dlib
-        rgb = np.array(rgb, dtype=np.uint8, order='C', copy=True)
+        rgb = np.ascontiguousarray(rgb, dtype=np.uint8)
 
-        print(f"Image decoded via OpenCV: shape={rgb.shape}, dtype={rgb.dtype}, contiguous={rgb.flags['C_CONTIGUOUS']}", flush=True)
+        print(
+            "Prepared RGB for dlib: "
+            f"shape={rgb.shape}, dtype={rgb.dtype}, contiguous={rgb.flags['C_CONTIGUOUS']}",
+            flush=True,
+        )
 
         # Use face_recognition to detect faces and get encodings
         try:
